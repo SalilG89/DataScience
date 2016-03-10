@@ -10,12 +10,14 @@ install.packages("reshape2")
 
 install.packages(c("choroplethr", "choroplethrMaps")) 
 install.packages('jpeg', repos="http://cran.r-project.org")
+install.packages('corrplot', repos="http://cran.r-project.org")
 install.packages('choroplethr', repos="http://cran.r-project.org")
 
 install.packages(path_to_file, repos = NULL, type="source")
 
 
 library(maps)
+library(corrplot)
 
 library(ggplot2)
 library(dplyr)
@@ -158,6 +160,13 @@ cordf[i] <- lapply(cordf[i], as.numeric)
 
 
 mycors <- cor(cordf, use="complete.obs", method="kendall") 
+
+myelectioncorplot <- corrplot(mycors,method = "circle")
+
+
+
+
+
 
 
 ## create a visualization from the corelation matrix
