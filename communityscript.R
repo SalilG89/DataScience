@@ -1,13 +1,23 @@
 library(data.table)
 library(ggplot2)
+install.packages("Vennerable", repos = "http://R-Forge.R-project.org")
+source("https://bioconductor.org/biocLite.R")
+biocLite("RBGL")
+library(tabplot)
+
+install.packages("RBGL", repos="http://cran.r-project.org")
+library(vennerable)
+
+library(choroplethr)
+library(choroplethrMaps)
 
 
-
-
-popCols <- c("ST", "PWGTP", "AGEP" ,"CIT", "CITWP", "COW", "DEAR", "DEYE", "ENG", "MAR" ,  "SCH", "SCHG", "SEX", "WAGP", "ANC1P", "POBP" ,"VPS", "ESR")
+popCols <- c( "ST", "PWGTP", "AGEP" ,"CIT", "CITWP", "COW", "DEAR", "DEYE", "ENG", "MAR" ,  "SCH", "SCHG", "SEX", "WAGP", "ANC1P", "POBP" ,"VPS", "ESR", "PINCP")
 
 ##ST STate
-CITIZENSHIP
+
+
+##CITIZENSHIP
 ##Year of naturalizaiton Right in 
 ##CLASS OF WORKER
 ##HEARING DIFFICULTY
@@ -25,7 +35,6 @@ CITIZENSHIP
 
 popDF <- fread("H:\\Py\\csv_pus\\ss13pusa.csv", select  = popCols)
 
-
 popDF$ST <- factor(popDF$ST)
 popDF$CIT <- factor(popDF$CIT)
 popDF$COW <- factor(popDF$COW)
@@ -41,51 +50,42 @@ popDF$ESR <- factor(popDF$ESR)
 popDF$POBP <- factor(popDF$POBP)
 popDF$VPS <- factor(popDF$VPS)
 
-###### housing analsis below
-
-library(data.table)
-library(ggplot2)
 
 
+levels(popDF$CIT) <- c("Born in US", "Born in US Terri", "American Born abroad", "Naturalized", "Non-Citizen")
 
+levels(popDF$COW) <- c("For-Profit" , "Non-Proft", "Local Gov", "State Gov", "Fed Gov", "Self-Employed A", "Self-Employed B", "Without Income - Family Biz or Farm", "Unemployed")
 
-housingCols <- c("ACCESS", "MODEM", "FINCP" ,"FPARC", "HHT", "WORKSTAT", "FES", "WGTP")
+levels(popDF$ENG) <- c("Very Well", "Well", "Not Well", "None")
 
-
-
-housDF <- fread("H:\\Py\\csv_hus\\ss13husa.csv", select  = housingCols)
-
-
-
-housDF$MODEM <- factor(housDF$MODEM)
-
-housDF$ACCESS <- factor(housDF$ACCESS)
+levels(popDF$MAR) <- c("Married", "Widowed", "Divorced", "Seperated", "Never Married or under 15")
+levels(popDF$SCH) <- c("No", "Yes Public", "Yes Private")
+levels(popDF$SEX) <- c("Male", "Female")
+levels(popDF$ESR) <- c("Civilian, at work", "Civilian, Not at Work", "Unemployed", "Armed Forces, at work", "Armed Forces, Not at work", "Non-Labor Force")
 
 
 
 
-levels(housDF$ACCESS) <- c("Subscription", "Yes w/o Subscription", "No Access")
-levels(housDF$MODEM) <- c("YES", "NO")
 
 
-hDFwAccess <- subset(housDF, !is.na(housDF$ACCESS))
-hDFwModem <- subset(housDF, !is.na(housDF$MODEM))
-
-
-
-##Plotting Distribution of Internet Access by Income
-ggplot(hDFwAccess, aes(FINCP, group = ACCESS)) + 
-  geom_histogram(bins = 50, aes(colour = ACCESS, fill = ACCESS), alpha = 0.3) +
-  xlab("Inc") + 
-  ylab("Count") + 
-  ggtitle("Inc by Internet")
+levels(popDF$ST) <-    c("alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut",
+                         "delaware", "district of columbia", "florida", "georgia", "hawaii", "idaho", "illinois",
+                         "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts",
+                         "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada",
+                         "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota",
+                         "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island",
+                         "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia",
+                         "washington", "west virginia", "wisconsin", "wyoming", "puerto rico")
 
 
 
-##Plotting Distirubtion of Internet Access by Income using 
 
-ggplot(housDF, aes(FINCP, group = MODEM)) + 
-  geom_histogram(bins = 50, aes(colour = MODEM, fill = MODEM), alpha = 0.3) + geom_histogram(bins = 50, aes(colour = MODEM, fill = MODEM), alpha = 0.3)
-xlab("Inc") + 
-  ylab("Count") + 
-  ggtitle("Inc by Internet")
+
+
+
+
+
+
+
+
+
