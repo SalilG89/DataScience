@@ -1,0 +1,111 @@
+---
+title: "2016 US Primary Election - Kaggle Script"
+author: "Salil Gupta"
+date: "April 3, 2016"
+output: html_document
+---
+
+This was my input for the following Kaggle Competition: <https://www.kaggle.com/benhamner/2016-us-election>
+
+The dataset was primary results from the "early" states for the 2016 US Presidential Election.
+Also, included with the data were "County Facts", variables that described the population in that County.  
+
+#Libraries Used
+
+Library | Description
+------------- | -------------
+Chropleth | A library for plotting US County and State data
+RPart | A library usued for its recursive partioning algorithms
+GGPlot2 | Grammar of Graphics Plotting library
+Reshape2 | Pivoting data from long to wide
+caret | ML Library
+RSQLite | Connect to SQLite tables
+DPlyr | The Data Wrangling Package
+
+
+
+## SQLite Code to connect to datbase
+
+```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
+
+library(maps)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+library(RSQLite)
+library(choroplethr)
+library(choroplethrMaps)
+library(rpart)
+library(rpart.plot)
+library(datasets)
+library(caret)
+
+
+dbpath = "C:/Users/Salil/Downloads/PE/2016_presidential_election/database.sqlite"
+db <- dbConnect(dbDriver("SQLite"), dbpath)
+dbListTables(db)
+
+countyfacts <- dbGetQuery(db, "select *  from county_facts")
+cfd <- dbGetQuery(db, "select *  from county_facts_dictionary")
+presults <- dbGetQuery(db, "select *  from primary_results")
+rsPR <- data.frame(presults$fips,presults$party,presults$candidate, presults$fraction_votes)
+```
+
+## Convert candidates' percentage of votes from long to wide
+```{r eval=TRUE}
+colnames(rsPR) <- c("fips","party","cand","perVotes")
+newdf <- dcast(rsPR,fips ~ cand , value.var = "perVotes")
+
+mydf <- merge(newdf,countyfacts, by = "fips")
+mydf$ID <- rownames(mydf)
+##Derived column 
+##head(mydf,1)
+```
+
+## derived columns to get county winners 
+```{r eval=TRUE}
+demdf <- data.frame(mydf$`Hillary Clinton`, mydf$`Bernie Sanders`)
+demwinners <- colnames(demdf)[apply(demdf,1,which.max)]
+
+repubdf <- data.frame(mydf$`Ben Carson`, mydf$`Carly Fiorina`, mydf$`Chris Christie`, mydf$`Jeb Bush`, mydf$`John Kasich`, mydf$`Marco Rubio`, mydf$`Ted Cruz`, mydf$`Donald Trump`, mydf$`Ted Cruz`, mydf$`Mike Huckabee` ,mydf$`Rand Paul`, mydf$`Rick Santorum`)
+rwinners <- colnames(repubdf)[apply(repubdf,1,which.max)]
+
+```
+## attach ID field to merge on 
+```{r eval=TRUE}
+dwdf <- data.frame(demwinners)
+dwdf$ID <- rownames(dwdf)
+
+rwdf <- data.frame(rwinners)
+rwdf$ID <- rownames(rwdf)
+
+winners <- merge(rwdf,dwdf, by = "ID")
+mydf <- merge(winners,mydf, by = "ID")
+```
+
+## functions to produce plots easily from dataset
+
+```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
+
+  
+  df <- data.frame(mydf$fips, mydf$INC110213 )
+  colnames(df) <- cbind("region", "value")
+  
+  
+  county_choropleth(df)
+
+  ggplot(aes(x=RHI725214,y=AGE775214,color=mydf$rwinners),data=mydf)+geom_jitter()
+  dropcols <- c("rwinners", "demwinners","area_name","state_abbreviation" )
+cordf <- mydf[ , !names(mydf) %in% dropcols ]
+
+i <- sapply(cordf, is.character)
+cordf[i] <- lapply(cordf[i], as.numeric)
+
+
+mycors <- cor(cordf, use="complete.obs", method="kendall") 
+
+myelectioncorplot <- corrplot(mycors,method = "circle")
+
+  
+```
