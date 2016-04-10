@@ -1,0 +1,150 @@
+---
+title: 'Kaggle Script:  American Community Survey'
+author: "Salil Gupta"
+date: "April 7, 2016"
+output: html_document
+---
+
+This was my input for the following Kaggle Competition: <https://www.kaggle.com/benhamner/2016-us-election>
+
+The data consisted of two different data sets, one on the grain of individual people, the other on indvidiual households.  
+Also, included with the data were "County Facts", variables that described the population in that County.  
+
+#Libraries Used
+
+Library | Description
+------------- | -------------
+Data.Table | A library for plotting US County and State data
+GGPlot2 | Grammar of Graphics Plotting library
+
+
+```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
+
+library(data.table)
+
+library(ggplot2)
+library(sqldf)
+```
+
+##ST STate
+
+
+
+
+Variable | Description
+------------- | -------------
+ST | State
+PWGTP | A library for plotting US County and State data
+AGEP | AGE
+CIT | CITIZENSHIP
+CITWP | A library for plotting US County and State data
+COW | Class of Worker
+DEAR | A library for plotting US County and State data
+DEYE | A library for plotting US County and State data
+ENG | English Skills
+MAR | Marital Status
+SCH | Current Student Status
+SCHG | A library for plotting US County and State data
+SCHL | A library for plotting US County and State data
+SEX | Gender
+WAGP | A library for plotting US County and State data
+ANC1P | A library for plotting US County and State data
+POBP | A library for plotting US County and State data
+VPS | Veteran Status
+ESR | A library for plotting US County and State data
+PINCP | Income
+RAC1P | Race
+
+
+| Grammar of Graphics Plotting library
+
+
+
+## Data.Table package is used to only load the columns we need from the external dataset
+```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
+popCols <- c("ST", "PWGTP", "AGEP" ,"CIT", "CITWP", "COW", "DEAR", "DEYE", "ENG", "MAR" ,  "SCH", "SCHG", "SCHL", "SEX", "WAGP", "ANC1P", "POBP" ,"VPS", "ESR", "PINCP" ,"RAC1P")
+
+popDF <- fread("H:\\Py\\csv_pus\\ss13pusa.csv", select  = popCols)
+
+
+popDF$ST <- factor(popDF$ST)
+popDF$CIT <- factor(popDF$CIT)
+popDF$COW <- factor(popDF$COW)
+popDF$DEAR <- factor(popDF$DEAR)
+popDF$DEYE <- factor(popDF$DEYE)
+popDF$ENG <- factor(popDF$ENG)
+popDF$MAR <- factor(popDF$MAR)
+popDF$SCH <- factor(popDF$SCH)
+popDF$SCHGFactor <- factor(popDF$SCHG)
+popDF$SCHLFactor <- factor(popDF$SCHL)
+popDF$SEX <- factor(popDF$SEX)
+popDF$ESR <- factor(popDF$ESR)
+popDF$POBP <- factor(popDF$POBP)
+popDF$VPS <- factor(popDF$VPS)
+popDF$RAC1P <- factor(popDF$RAC1P)
+
+levels(popDF$CIT) <- c("Born in US", "Born in US Terri", "American Born abroad", "Naturalized", "Non-Citizen")
+levels(popDF$COW) <- c("For-Profit" , "Non-Proft", "Local Gov", "State Gov", "Fed Gov", "Self-Employed A", "Self-Employed B", "Without Income - Family Biz or Farm", "Unemployed")
+levels(popDF$ENG) <- c("Very Well", "Well", "Not Well", "None")
+levels(popDF$MAR) <- c("Married", "Widowed", "Divorced", "Seperated", "Never Married or under 15")
+levels(popDF$SCH) <- c("No", "Yes Public", "Yes Private")
+levels(popDF$SEX) <- c("Male", "Female")
+levels(popDF$ESR) <- c("Civilian, at work", "Civilian, Not at Work", "Unemployed", "Armed Forces, at work", "Armed Forces, Not at work", "Non-Labor Force")
+levels(popDF$ST) <-  c("alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut",
+                         "delaware", "district of columbia", "florida", "georgia", "hawaii", "idaho", "illinois",
+                         "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine", "maryland", "massachusetts",
+                         "michigan", "minnesota", "mississippi", "missouri", "montana", "nebraska", "nevada",
+                         "new hampshire", "new jersey", "new mexico", "new york", "north carolina", "north dakota",
+                         "ohio", "oklahoma", "oregon", "pennsylvania", "rhode island",
+                         "south carolina", "south dakota", "tennessee", "texas", "utah", "vermont", "virginia",
+                         "washington", "west virginia", "wisconsin", "wyoming", "puerto rico")
+
+levels(popDF$RAC1P) <- c("White", "Black", "American Indian", "Alaska Native",  "American Indian - Tribe Specific", "Asian", "Pacific Islander", "Other", "Two or More Races")
+```
+
+## Case Statement to Recode School Grade Attainment into Degree Buckets using SQLDF package (Very effective for derived columns, if this SSIS developer  says so)
+\
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
+popDF$SCHLRecode <- sqldf(
+  "
+  select case 
+  when SCHL <= 15 then 'NonGrad' 
+  when SCHL = 16 then 'HS' 
+  when SCHL = 17 then 'GED' 
+  when SCHL <= 19 and SCHL >= 18 then 'College Drop Out' 
+  when SCHL = 20 then 'Associate'
+  when SCHL = 21 then 'Bachelor'
+  when SCHL = 22 then 'Master'
+  when SCHL = 23 then 'Professional'
+  when SCHL = 24 then 'Doctorate'
+  
+  else 'NULL' end 
+
+  as SCHLRecode
+
+  from popDF"
+  
+)
+```
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
+popDF$SCHLRecode <- sqldf(
+  "
+  select case 
+  when SCHL <= 15 then 'NonGrad' 
+  when SCHL = 16 then 'HS' 
+  when SCHL = 17 then 'GED' 
+  when SCHL <= 19 and SCHL >= 18 then 'College Drop Out' 
+  when SCHL = 20 then 'Associate'
+  when SCHL = 21 then 'Bachelor'
+  when SCHL = 22 then 'Master'
+  when SCHL = 23 then 'Professional'
+  when SCHL = 24 then 'Doctorate'
+  
+  else 'NULL' end 
+
+  as SCHLRecode
+
+  from popDF"
+  
+)
+```

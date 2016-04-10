@@ -1,0 +1,167 @@
+---
+title: "2016 US Presidential Primary Season"
+author: "Salil Gupta"
+date: "April 5, 2016"
+output: html_document
+---
+
+This was my input for the following Kaggle Competition: <https://www.kaggle.com/benhamner/2016-us-election>
+
+The dataset was primary results from the "early" states for the 2016 US Presidential Election.
+Also, included with the data were "County Facts", variables that described the population in that County.  
+
+#Libraries Used
+
+Library | Description
+------------- | -------------
+Chropleth | A library for plotting US County and State data
+RPart | A library usued for its recursive partioning algorithms
+GGPlot2 | Grammar of Graphics Plotting library
+Reshape2 | Pivoting data from long to wide
+caret | ML Library
+RSQLite | Connect to SQLite tables
+DPlyr | The Data Wrangling Package
+SQLDF | Query dfs like tables
+RColorBrewer | Produce Better Looking Trees
+
+
+
+
+
+
+```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
+
+library(maps)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+library(RSQLite)
+library(choroplethr)
+library(choroplethrMaps)
+library(rpart)
+library(rpart.plot)
+library(datasets)
+library(caret)
+library(sqldf)
+library(RColorBrewer)
+library(rattle)
+```
+
+## Connect to SQLite dB 
+
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
+dbpath = "H:/PE/2016_presidential_election/database.sqlite"
+db <- dbConnect(dbDriver("SQLite"), dbpath)
+dbListTables(db)
+
+countyfacts <- dbGetQuery(db, "select *  from county_facts")
+cfd <- dbGetQuery(db, "select *  from county_facts_dictionary")
+presults <- dbGetQuery(db, "select *  from primary_results")
+rsPR <- data.frame(presults$fips,presults$party,presults$candidate, presults$fraction_votes)
+```
+
+## Pivot the Candidate's Percentage of Votes to Columns for each County Code 
+```{r eval=TRUE}
+colnames(rsPR) <- c("fips","party","cand","perVotes")
+newdf <- dcast(rsPR,fips ~ cand , value.var = "perVotes")
+
+mydf <- merge(newdf,countyfacts, by = "fips")
+mydf$ID <- rownames(mydf)
+##Derived column 
+##head(mydf,1)
+```
+
+## Derived Columns to get County Winners, and Binary Fields for Candidate of Interest (Trump)
+```{r eval=TRUE}
+demdf <- data.frame(mydf$`Hillary Clinton`, mydf$`Bernie Sanders`)
+demwinners <- colnames(demdf)[apply(demdf,1,which.max)]
+
+repubdf <- data.frame(mydf$`Ben Carson`, mydf$`Carly Fiorina`, mydf$`Chris Christie`, mydf$`Jeb Bush`, mydf$`John Kasich`, mydf$`Marco Rubio`, mydf$`Ted Cruz`, mydf$`Donald Trump`, mydf$`Ted Cruz`, mydf$`Mike Huckabee` ,mydf$`Rand Paul`, mydf$`Rick Santorum`)
+rwinners <- colnames(repubdf)[apply(repubdf,1,which.max)]
+
+dwdf <- data.frame(demwinners)
+dwdf$ID <- rownames(dwdf)
+
+rwdf <- data.frame(rwinners)
+rwdf$ID <- rownames(rwdf)
+
+winners <- merge(rwdf,dwdf, by = "ID")
+mydf <- merge(winners,mydf, by = "ID")
+BinaryCandidateWin <- sqldf("select ID, 
+                   
+                   case when rwinners = 'mydf..Donald.Trump.' then 1 else 0 end as TrumpWin,
+                   case when demwinners = 'mydf..Hillary.Clinton.' then 1 else 0 end as HilWin
+
+                   from mydf ")
+mydf <- merge(BinaryCandidateWin,mydf, by = "ID")
+
+```
+
+
+
+
+## Map Plots :  Income and Trump Percentage 
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
+
+ 
+  df <- data.frame(mydf$fips, mydf$INC110213 )
+  colnames(df) <- cbind("region", "value")
+  
+  
+  county_choropleth(df)
+  
+  
+  df <- data.frame(mydf$fips, mydf$`Donald Trump` )
+  colnames(df) <- cbind("region", "value")
+  
+  
+  county_choropleth(df)
+  
+ ## GG Plot
+
+  ggplot(aes(x=RHI725214,y=AGE775214,color=mydf$rwinners),data=mydf)+geom_jitter()
+  dropcols <- c("rwinners", "demwinners","area_name","state_abbreviation" )
+cordf <- mydf[ , !names(mydf) %in% dropcols ]
+
+i <- sapply(cordf, is.character)
+cordf[i] <- lapply(cordf[i], as.numeric)
+
+
+mycors <- cor(cordf, use="complete.obs", method="kendall") 
+
+##myelectioncorplot <- corrplot(mycors,method = "circle")
+
+treeFormu <- formula(TrumpWin ~  PST045214 + 
+                     PST040210 +                      PST120214 +                      POP010210 +                      AGE135214 + 
+                     AGE295214 +                      AGE775214 +                      SEX255214 +                      RHI125214 + 
+                     RHI225214 +                      RHI325214 +                      RHI425214 +                      RHI525214 + 
+                     RHI625214 +                      RHI725214 +                      RHI825214 +                      POP715213 + 
+                     POP645213 +                      POP815213 +                      EDU635213 +                      EDU685213 + 
+                     VET605213 +                      LFE305213 +                      HSG010214 +                      HSG445213 + 
+                     HSG096213 +                      HSG495213 +                      HSD410213 +                      HSD310213 + 
+                     INC910213 +                      INC110213 +                      PVY020213 +                      BZA010213 + 
+                     BZA110213 +                      BZA115213 +                      NES010213 +                      SBO001207 + 
+                     SBO315207 +                      SBO115207 +                      SBO215207 +                      SBO515207 + 
+                     SBO415207 +                      SBO015207 +                      MAN450207 +                      WTN220207 + 
+                     RTN130207 +                      RTN131207 +                      AFN120207 +                      BPS030214 + 
+                     LND110210 +                      POP060210 )
+ set.seed(1001)
+rprimindex <- createDataPartition(y=mydf$rwinners, times = 1, p =.5, list = F)
+mydf.train <-mydf[rprimindex, ]
+mydf.test  <-mydf[-rprimindex, ]
+set.seed(1)
+treeModel <- rpart(treeFormu,  data=mydf.train)
+
+
+trumpPred.train<- factor(format(round(predict(treeModel, mydf.train))))
+trumpPred.test<- factor(format(round(predict(treeModel, mydf.test))))
+##table(trumpPred, mydf.test$HilWin)
+
+confusionMatrix(trumpPred.train, mydf.train$TrumpWin)
+confusionMatrix(trumpPred.test, mydf.test$TrumpWin)
+
+
+fancyRpartPlot(treeModel)
+  
+```
