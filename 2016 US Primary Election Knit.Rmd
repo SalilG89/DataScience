@@ -109,18 +109,22 @@ mydf <- merge(BinaryCandidateWin,mydf, by = "ID")
   colnames(df) <- cbind("region", "value")
   
   
-  county_choropleth(df)
+  county_choropleth(df, title = "Income", legend = "Dollars")
   
   
   df <- data.frame(mydf$fips, mydf$`Donald Trump` )
   colnames(df) <- cbind("region", "value")
   
   
-  county_choropleth(df)
+  county_choropleth(df, title ="Percentage of Votes for Trump")
   
  ## GG Plot
 
-  ggplot(aes(x=RHI725214,y=AGE775214,color=mydf$rwinners),data=mydf)+geom_jitter()
+  ggplot(aes(x=RHI725214,y=AGE775214,color=mydf$rwinners),data=mydf)+geom_jitter() + ggtitle("Republicans")+xlab("Percentage of Hispanics") + ylab("Percentage of People Over 65")
+   ggplot(aes(x=RHI725214,y=AGE775214,color=mydf$demwinners),data=mydf)+geom_jitter() + ggtitle("Democrats") +xlab("Percentage of Hispanics") +ylab("Percentage of People Over 65")
+  
+  pairs(mydf[,8:21])
+  
   dropcols <- c("rwinners", "demwinners","area_name","state_abbreviation" )
 cordf <- mydf[ , !names(mydf) %in% dropcols ]
 
@@ -150,7 +154,7 @@ treeFormu <- formula(TrumpWin ~  PST045214 +
 rprimindex <- createDataPartition(y=mydf$rwinners, times = 1, p =.5, list = F)
 mydf.train <-mydf[rprimindex, ]
 mydf.test  <-mydf[-rprimindex, ]
-set.seed(1)
+
 treeModel <- rpart(treeFormu,  data=mydf.train)
 
 

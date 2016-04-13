@@ -24,6 +24,16 @@ library(data.table)
 
 library(ggplot2)
 library(sqldf)
+
+
+library(maps)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+library(RSQLite)
+library(choroplethr)
+library(choroplethrMaps)
 ```
 
 ##ST STate
@@ -64,7 +74,7 @@ RAC1P | Race
 ```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
 popCols <- c("ST", "PWGTP", "AGEP" ,"CIT", "CITWP", "COW", "DEAR", "DEYE", "ENG", "MAR" ,  "SCH", "SCHG", "SCHL", "SEX", "WAGP", "ANC1P", "POBP" ,"VPS", "ESR", "PINCP" ,"RAC1P")
 
-popDF <- fread("H:\\Py\\csv_pus\\ss13pusa.csv", select  = popCols)
+popDF <- readRDS("ACSTrain.rds")
 
 
 popDF$ST <- factor(popDF$ST)
@@ -102,8 +112,8 @@ levels(popDF$ST) <-  c("alabama", "alaska", "arizona", "arkansas", "california",
 levels(popDF$RAC1P) <- c("White", "Black", "American Indian", "Alaska Native",  "American Indian - Tribe Specific", "Asian", "Pacific Islander", "Other", "Two or More Races")
 ```
 
-## Case Statement to Recode School Grade Attainment into Degree Buckets using SQLDF package (Very effective for derived columns, if this SSIS developer  says so)
-\
+## Case Statement to Recode School Grade Attainment into Degree Buckets 
+
 ```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
 popDF$SCHLRecode <- sqldf(
   "
@@ -118,33 +128,82 @@ popDF$SCHLRecode <- sqldf(
   when SCHL = 23 then 'Professional'
   when SCHL = 24 then 'Doctorate'
   
-  else 'NULL' end 
+  else NULL end 
 
   as SCHLRecode
 
   from popDF"
   
 )
+
+
+
+popDF$SCHLRecode <- factor(popDF$SCHLRecode)
+
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7" , "magenta1")
+
+
 ```
 ```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
-popDF$SCHLRecode <- sqldf(
-  "
-  select case 
-  when SCHL <= 15 then 'NonGrad' 
-  when SCHL = 16 then 'HS' 
-  when SCHL = 17 then 'GED' 
-  when SCHL <= 19 and SCHL >= 18 then 'College Drop Out' 
-  when SCHL = 20 then 'Associate'
-  when SCHL = 21 then 'Bachelor'
-  when SCHL = 22 then 'Master'
-  when SCHL = 23 then 'Professional'
-  when SCHL = 24 then 'Doctorate'
-  
-  else 'NULL' end 
 
-  as SCHLRecode
 
-  from popDF"
+
+##Map the Income Data
+
+incomemapDF <- subset(popDF, !is.na(PINCP))
+incomemapDF <- as.data.frame(tapply(incomemapDF$PINCP, incomemapDF$ST, mean))
+incomemapDF$region <- row.names(incomemapDF)
+colnames(incomemapDF)[1] <- "value"
+state_choropleth(incomemapDF)
+
+##Boxplot of Income vs Graduate Level Bucket
+ggplot(popDF, aes(x = SCHLRecode, y = PINCP, fill = SCHLRecode)) +  ylim(0,100000) + 
+  geom_boxplot() +
+  xlab("SchoolGrade") + ylab("Income USD") +
+  ## ylab("Count") + 
+  ggtitle("Income") +ylim(0,100000) + scale_color_manual(values = cbPalette)
+
+
+ggplot(popDF, aes(x = SEX, y = PINCP, fill = SEX)) +  ylim(0,100000) + 
+  geom_boxplot() +
+  xlab("Gender") + ylab("Income USD") +
+  ## ylab("Count") + 
+  ggtitle("Income") + scale_color_manual(values = cbPalette)
+
+
+
+
+ggplot(popDF, aes(x = MAR, y = PINCP, fill = MAR)) +  ylim(0,100000) + 
+  geom_boxplot() +
+  xlab("Marital Status") + 
+  ## ylab("Count")  +
+  ggtitle("Income") + scale_color_manual(values = cbPalette)
+
+ggplot(popDF, aes(PINCP)) + geom_area(stat = "bin", bins = 300, aes(fill = SCHLRecode ))  +xlim(0,100000)
+ggplot(popDF, aes(x = PINCP, fill = SCHLRecode)) + geom_density(alpha = .3)  +xlim(0,100000) + ylim(0,.00025) + scale_fill_brewer(palette = "Paired")
+
+ggplot(popDF, aes(x = COW, y = PINCP, fill = COW)) +  ylim(0,100000) + 
+  geom_boxplot() +
+  xlab("Clas of Worker") + ylab("Income USD") +
+  ## ylab("Count") + 
+  ggtitle("Income") + scale_color_manual(values = cbPalette)
+
+
+
+ggplot(popDF, aes(x = CIT, y = PINCP, fill = CIT)) + ylim(0,100000) + 
+  geom_boxplot() +
+  xlab("Citizen Status") + ylab("Income USD") +
+  ## ylab("Count") + 
+  ggtitle("Income")  + scale_color_manual(values = cbPalette)
+
+
+
+##levels(popDF.tidy$SCHLRecode)  
   
-)
-```
+popDF.tidy <- popDF %>% select(PINCP,SCHLRecode,AGEP) %>% filter(!is.na(PINCP), !is.na(SCHLRecode), !is.na(AGEP))
+
+
+ggplot(aes(x=AGEP,y=PINCP,color=SCHLRecode),data=popDF.tidy)+geom_jitter() + ggtitle("Age vs Income")+xlab("Age") + ylab("Income") + scale_color_manual(values = cbPalette)
+
+
+
