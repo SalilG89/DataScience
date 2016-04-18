@@ -51,7 +51,9 @@ library(rattle)
 ## Connect to SQLite dB 
 
 ```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
-dbpath = "H:/PE/2016_presidential_election/database.sqlite"
+
+
+dbpath = "C:/Users/Salil/Downloads/PE/2016_presidential_election/database.sqlite"
 db <- dbConnect(dbDriver("SQLite"), dbpath)
 dbListTables(db)
 

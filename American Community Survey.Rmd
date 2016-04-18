@@ -16,7 +16,13 @@ Library | Description
 ------------- | -------------
 Data.Table | A library for plotting US County and State data
 GGPlot2 | Grammar of Graphics Plotting library
-
+SQLDf | Query dataframes like SQL tables
+Maps | US Maps
+ggplot2 |  Charts
+dplyr | the data wrangling package
+reshpae2 | reshape your data
+RSQLite | Connect to SQLite database
+Choroplethr | Map plots
 
 ```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
 
