@@ -146,7 +146,7 @@ Here I construct a pairwise correlation matrix that shows if there is indeed an 
 
 Now I thought I would see if I can predict Trump Victories by looking at the different County Facts data.  I used a Recursive Partitioned Decision Tree, and passed in all the variables.   
 
-I split the data into equal sized testing and training data.  I used createDataParition, by passing the variable of interest to the y argument, the random samppling occurs within each class (Trump Wins/ Trump Doesnt Win) and should preserve the overall class distribution.  
+I split the data into equal sized testing and training data.  I used createDataParition, and by passing the variable of interest to the y argument, the random samppling occurs within each class (Trump Wins/ Trump Doesnt Win) and should preserve the overall class distribution.  
 As shown by the confusion matrix results the model overfitted.  We got a much better result on the Training set prediction than the Testing set.
 ```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
    

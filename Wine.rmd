@@ -2,14 +2,30 @@
 title: "Wine Dataset"
 author: "Salil Gupta"
 date: "April 14, 2016"
-output: pdf_document
+output: html_document
 ---
 
+Analysis:  For this project I analyzed wine data from UC Irvine's Machine Learning Repository.  The datasets were already broken up by red, and white. 
+I thought it would be an interesting prediction problem to recombine them, and see if I can distinguish which wines were which color.  
+
+The wine data proved to be a good dataset as introduction to machien learning.  Much like the Iris dataset one can apply numerous techniques to come up with a pretty good prediction of color. However, there is overlap of characteristics between the two colors that make room for fine-tuning models more inviting.  In this example I apply a recursive partitioning decision tree.  
+
+Library | Description
+------------- | -------------
+ScatterPlot3d | Create 3d Scatterplots
+GGPlot2 | Grammar of Graphics Plotting library
+SQLDf | Query dataframes like SQL tables
+dplyr | the data wrangling package
+rpart | Recursively Partioned Trees
+RSQLite | Connect to SQLite database
+Rattle | Beautiful Rpart Tree Plot
+RColorBrewer | Beaitufl Rpart Tree Plot
+Caret | Classification and Regression package for CreateDatapartition and ConfusionMatrix functions
 
 
-```{r, echo=TRUE}
+
+```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
 library(scatterplot3d)
-
 library(rpart)
 library(rattle)
 library(RColorBrewer)
@@ -17,6 +33,13 @@ library(rpart.plot)
 library(caret)
 library(dplyr)
 library(sqldf)
+library(ggplot2)
+```
+
+Now we read in the two data sources, add the Color variable to each set and merge them.  
+```{r, echo=TRUE}
+
+
 
 redURL <- "http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
 whiteURL <- "http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv"
@@ -32,21 +55,22 @@ redDF$Color <- "Red"
 
 wineDF <- rbind(whiteDF, redDF)
 wineDF$Color <- as.factor(wineDF$Color)
+```
+
+For plotting the wine data with appropriate colors we generate a palette with the grape colors. 
+------
+Green Grapes -> White Wine
+Purple Grapes -> Red Wine
 
 
-##summary(wineDF)
-
-
-##str(wineDF)
-
-##pairs(wineDF[,1:12])
-
-##colnames(wineDF)
+```{r, echo=TRUE}
 colors <- c("Green", "Purple")
 colors <- colors[as.numeric(wineDF$Color)]
-
-
+```
+3d Plot the data to see if we can distinguish Red vs White by sight
+```{r, echo=TRUE}
 scatterplot3d(x = wineDF$residual.sugar, y = wineDF$sulphates, z = wineDF$total.sulfur.dioxide, color = colors, pch = 16)
+scatterplot3d(x = wineDF$sulphates, y = wineDF$residual.sugar, z = wineDF$total.sulfur.dioxide, color = colors, pch = 16)
 
 scatterplot3d(x = wineDF$density, y = wineDF$pH, z = wineDF$alcohol, color = colors, pch = 16)
 
@@ -57,18 +81,21 @@ ggplot(aes(x=density,y=pH,color=Color),data=wineDF)+geom_jitter() + ggtitle("Den
 
 
 
-ggplot(aes(x=residual.sugar,y=total.sulfur.dioxide ,color=Color),data=wineDF)+geom_jitter() + ggtitle("Density vs Acidity")+xlab("Density") + ylab("pH") + scale_color_manual(values = c("Green", "Purple"))
+ggplot(aes(x=residual.sugar,y=total.sulfur.dioxide ,color=Color),data=wineDF)+geom_jitter() + ggtitle("Sugar vs Sulfur")+xlab("Residual Sugar") + ylab("Sulfur Dioxide") + scale_color_manual(values = c("Green", "Purple"))
 
+ggplot(aes(x=residual.sugar,y=sulphates ,color=Color),data=wineDF)+geom_jitter() + ggtitle("Sugar vs Sulphates")+xlab("Residual Sugar") + ylab("Sulphate") + scale_color_manual(values = c("Green", "Purple"))
+```
 
+It looks like we should easily be able to come up with a model to distingush wine color.  Let's pass all of our variables as possible features and run a recursively partitioned decision tree.  We will also split the data into testing and training data using createDataPartition function from Caret. And by passing the variable of interest to the y argument, the random samppling occurs within each class (Red/White) and should preserve the overall class distribution.
 
-
+```{r, echo=TRUE}
 
 wineformula <- formula(Color ~ fixed.acidity + volatile.acidity + citric.acid +
                          residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + density + pH + sulphates + alcohol + quality)
 
 
 
-
+set.seed(1001)
 
 rprimindex <- createDataPartition(y=wineDF$Color, times = 1, p =.5, list = F)
 wineDFtrain <-wineDF[rprimindex, ] ## Create Test Data
@@ -77,11 +104,17 @@ wineDFtest  <-wineDF[-rprimindex, ]
 winemodel <- rpart(wineformula, data = wineDFtrain)
 
 
+```
 
+Our decision tree model identifies our key variables for prediciton.
+
+The first split is on chloride, then on sulfur.dioxide, then density, and fixed.acidity.
+
+Our model performs quite well predicting over 97% of wines.
+```{r, echo=TRUE}
 
 winePredtest <-as.data.frame(predict(winemodel,wineDFtest))
 
-##head(winePredtest)
 
 
 
@@ -97,15 +130,10 @@ ColorRecode<- sqldf(  " select case when White > .5 then 'White'
 winePredtest$Color <- as.factor(ColorRecode$Color)
 
 
-str(ColorRecode)
 
 
-##levels(winePredtest$Color) <- c("Red", "White")
 confusionMatrix(winePredtest$Color, wineDFtest$Color)
 
-levels(wineDFtest$Color)
-
-##fancyRpartPlot(winemodel)
+fancyRpartPlot(winemodel)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

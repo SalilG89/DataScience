@@ -1,0 +1,60 @@
+---
+title: "Salil's Data Portfolio"
+author: "Salil Gupta"
+date: "April 18, 2016"
+output: html_document
+---
+
+##Data Analysis Publications on RPubs
+
+<http://rpubs.com/salilg89/>
+
+Library | Description
+------------- | -------------
+American Community Survey | Let's plot 2013 Income data by different characteristics using primarily GGPlot2
+2016 US Primary Election | Looking at 2016 Early Presidential Primary state data and predictions for Trump victories in different counties
+Wine | Exploration of UCI Machine Learning Wine data, and predicting White vs Red
+
+##GitHub Scripts
+
+<https://github.com/SalilG89/DataScience>
+
+ScriptFile | Description
+------------- | -------------
+Asymetric_Friend | Facebook asymetric friend find in MapReduce framework
+Join.py | Implementing Relational Join in MapReduce framework
+matrix_mult | Matrix Multiplication in MapReduce Framework
+TstreamBernie | US Maps
+SearchMetadataTweets2p.py |  Convert Twitter JSON from Search API to pipe delimited file
+AppendSentiments | Append Sentiment to tweet
+
+
+```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
+library(tm)
+library(syuzhet)
+library(wordcloud)
+
+
+text = "data data data data data data data data data RStudio RStudio RStudio RStudio Regression  RStudio RStudio RStudio RStudio RStudio RStudio RStudio RStudio SSRS SSRS SSIS SSIS SSIS SSIS SSIS data data data data  Classification data data data data data R R R R R R R R R R R R R SSRS SSRS SSRS SSRS SSRS SSRS SSRS  Regression SSRS SSRS SSRS SSRS SSIS SSIS SSIS SSIS SSIS SQL SQL SQL SQL SQL SQL SQL SQl SQL Wordcloud Wordcloud Regression  Wordcloud Term-Document-Matrix  Regression  Term-Document-Matrix  Term-Document-Matrix MachineLearning MachineLearning MachineLearning MachineLearning MachineLearning MachineLearning Cluster Cluster Modeling Modeling Python Python Webscraping Webscraping MapReduce MapReduce  Classification GGPlot GGplot Caret Caret Mining Mining OLAP OLAP Multidimensional Multidimensional Lattice Lattice ETL ETL Analytics AnalyticsTerm-Document-Matrix MachineLearning MachineLearning MachineLearning MachineLearning  Cluster  Modeling Modeling Python Python Webscraping Webscraping MapReduce MapReduce GGPlot GGplot Caret Caret Mining Mining OLAP OLAP Multidimensional Multidimensional Lattice Lattice ETL ETL Analytics Analytics Economics Economics Economics Economics Regression Classification dplyr dplyr dplyr dplyr Prediction  Prediction Prediction Prediction Prediction Prediction Prediction
+data data data data data data data data data RStudio RStudio RStudio RStudio Regression  RStudio RStudio RStudio RStudio RStudio RStudio RStudio RStudio SSRS SSRS SSIS SSIS SSIS SSIS SSIS data data data data  Classification data data data data data R R R R R R R R R R R R R SSRS SSRS SSRS SSRS SSRS SSRS SSRS  Regression SSRS SSRS SSRS SSRS SSIS SSIS SSIS SSIS SSIS SQL SQL SQL SQL SQL SQL SQL SQl SQL Wordcloud Wordcloud Regression  Wordcloud Term-  Term-Document-Matrix MachineLearning MachineLearning MachineLearning MachineLearning MachineLearning MachineLearning Cluster Cluster Modeling Modeling Python Python Webscraping Webscraping MapReduce MapReduce  Classification GGPlot GGplot Caret Caret Mining Mining OLAP OLAP Multidimensional Multidimensional Lattice Lattice ETL ETL Analytics AnalyticsTerm-Document-Matrix MachineLearning MachineLearning MachineLearning MachineLearning  Cluster  Modeling Modeling Python Python Webscraping Webscraping MapReduce MapReduce GGPlot GGplot Caret Caret Mining Mining OLAP OLAP Multidimensional Multidimensional Lattice Lattice ETL ETL Analytics Analytics Economics Economics Economics Economics Regression Classification dplyr dplyr dplyr dplyr Prediction  Prediction Prediction Prediction Prediction Prediction Prediction Visualization  Visualization Visualization Visualization Visualization Visualization Visualization Visualization Visualization
+"
+
+
+  myVectorSource <- VectorSource(text)
+  
+  myCorpus <- Corpus(myVectorSource)
+  myFreqMatrix <- as.matrix(TermDocumentMatrix(myCorpus))
+  
+  word_freqs = sort(rowSums(myFreqMatrix), decreasing = TRUE)
+  
+  myclouddf <- data.frame(word = names(word_freqs), freq = word_freqs)
+  
+  set.seed(1001)
+  
+  ##png("portfol.png", width=12, height=8, units="in", res=300)
+  wordcloud(myclouddf$word, myclouddf$freq, random.order = FALSE, colors =  c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7" , "magenta1"))
+  ##dev.off()
+
+
+
+```

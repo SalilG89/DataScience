@@ -5,12 +5,12 @@ date: "April 7, 2016"
 output: html_document
 ---
 
-This was my input for the following Kaggle Competition: <https://www.kaggle.com/benhamner/2016-us-election>
+This was my input for the following Kaggle Competition: <https://www.kaggle.com/census/2013-american-community-survey>
 
 The data consisted of two different data sets, one on the grain of individual people, the other on indvidiual households.  
 Also, included with the data were "County Facts", variables that described the population in that County.  
 
-#Libraries Used
+##Libraries Used
 
 Library | Description
 ------------- | -------------
@@ -27,11 +27,8 @@ Choroplethr | Map plots
 ```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
 
 library(data.table)
-
 library(ggplot2)
 library(sqldf)
-
-
 library(maps)
 library(corrplot)
 library(ggplot2)
@@ -42,8 +39,7 @@ library(choroplethr)
 library(choroplethrMaps)
 ```
 
-##ST STate
-
+##Variables
 
 
 
@@ -53,32 +49,37 @@ ST | State
 PWGTP | A library for plotting US County and State data
 AGEP | AGE
 CIT | CITIZENSHIP
-CITWP | A library for plotting US County and State data
 COW | Class of Worker
-DEAR | A library for plotting US County and State data
-DEYE | A library for plotting US County and State data
+DEAR | Hearing Disability
+DEYE | Seeing Disability
 ENG | English Skills
 MAR | Marital Status
-SCH | Current Student Status
-SCHG | A library for plotting US County and State data
-SCHL | A library for plotting US County and State data
+SCH | School Enrollment
+SCHG | Grade Level Attending
+SCHL | Educational Attainment
 SEX | Gender
-WAGP | A library for plotting US County and State data
-ANC1P | A library for plotting US County and State data
+WAGP | Wage
+ANC1P | Recoded Detailed Ancestry
 POBP | A library for plotting US County and State data
 VPS | Veteran Status
-ESR | A library for plotting US County and State data
-PINCP | Income
-RAC1P | Race
-
-
-| Grammar of Graphics Plotting library
+ESR | Employment Status Recode
+PINCP | Total Person's Income
+RAC1P | Recoded Detailed Race Code
 
 
 
-## Data.Table package is used to only load the columns we need from the external dataset
+Data.Table package was originally used to read in the data, to only select in the columns we wanted.  
+To make running it faster I saved the dataframe to a .rds
+
+All of the dimensions are referenced by IDs, so we must give them the desription.  This doesn't make the storage of the dataframe any less efficien, because of R factors.  It will still store the id, or level.  We just need to name the levels.
+
+
 ```{r eval=TRUE, message = FALSE , echo = FALSE, warning = FALSE}
 popCols <- c("ST", "PWGTP", "AGEP" ,"CIT", "CITWP", "COW", "DEAR", "DEYE", "ENG", "MAR" ,  "SCH", "SCHG", "SCHL", "SEX", "WAGP", "ANC1P", "POBP" ,"VPS", "ESR", "PINCP" ,"RAC1P")
+
+##      popDF <- fread("H:\\Py\\csv_pus\\ss13pusa.csv", select  = popCols)
+##      saveRDS(popDF, "ACSTrain.rds")
+
 
 popDF <- readRDS("ACSTrain.rds")
 
@@ -118,7 +119,7 @@ levels(popDF$ST) <-  c("alabama", "alaska", "arizona", "arkansas", "california",
 levels(popDF$RAC1P) <- c("White", "Black", "American Indian", "Alaska Native",  "American Indian - Tribe Specific", "Asian", "Pacific Islander", "Other", "Two or More Races")
 ```
 
-## Case Statement to Recode School Grade Attainment into Degree Buckets 
+I find sql case statements to be the easiest way to make derived columns.  You can also use Mutate from dyplr, I find this easier to read however.  
 
 ```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
 popDF$SCHLRecode <- sqldf(
@@ -145,6 +146,10 @@ popDF$SCHLRecode <- sqldf(
 
 
 popDF$SCHLRecode <- factor(popDF$SCHLRecode)
+```
+Before we get into plotting I create a pallete with specific color values that I find works well with a lot of different factors
+
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
 
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7" , "magenta1")
 
@@ -165,7 +170,7 @@ state_choropleth(incomemapDF)
 ##Boxplot of Income vs Graduate Level Bucket
 ggplot(popDF, aes(x = SCHLRecode, y = PINCP, fill = SCHLRecode)) +  ylim(0,100000) + 
   geom_boxplot() +
-  xlab("SchoolGrade") + ylab("Income USD") +
+  xlab("Degree Level") + ylab("Income USD") +
   ## ylab("Count") + 
   ggtitle("Income") +ylim(0,100000) + scale_color_manual(values = cbPalette)
 
@@ -186,11 +191,11 @@ ggplot(popDF, aes(x = MAR, y = PINCP, fill = MAR)) +  ylim(0,100000) +
   ggtitle("Income") + scale_color_manual(values = cbPalette)
 
 ggplot(popDF, aes(PINCP)) + geom_area(stat = "bin", bins = 300, aes(fill = SCHLRecode ))  +xlim(0,100000)
-ggplot(popDF, aes(x = PINCP, fill = SCHLRecode)) + geom_density(alpha = .3)  +xlim(0,100000) + ylim(0,.00025) + scale_fill_brewer(palette = "Paired")
+ggplot(popDF, aes(x = PINCP, fill = SCHLRecode)) + geom_density(alpha = .3)  +xlim(0,100000) + ylim(0,.00025) + scale_color_manual(values = cbPalette)
 
 ggplot(popDF, aes(x = COW, y = PINCP, fill = COW)) +  ylim(0,100000) + 
   geom_boxplot() +
-  xlab("Clas of Worker") + ylab("Income USD") +
+  xlab("Class of Worker") + ylab("Income USD") +
   ## ylab("Count") + 
   ggtitle("Income") + scale_color_manual(values = cbPalette)
 
