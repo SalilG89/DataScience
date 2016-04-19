@@ -48,12 +48,13 @@ library(RColorBrewer)
 library(rattle)
 ```
 
-## Connect to SQLite dB 
+## Connect to SQLite dB
 
 ```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
 
 
-dbpath = "C:/Users/Salil/Downloads/PE/2016_presidential_election/database.sqlite"
+##dbpath = "C:/Users/Salil/Downloads/PE/2016_presidential_election/database.sqlite"
+dbpath = "H:/PE/2016_presidential_election/database.sqlite"
 db <- dbConnect(dbDriver("SQLite"), dbpath)
 dbListTables(db)
 
@@ -63,7 +64,7 @@ presults <- dbGetQuery(db, "select *  from primary_results")
 rsPR <- data.frame(presults$fips,presults$party,presults$candidate, presults$fraction_votes)
 ```
 
-## Pivot the Candidate's Percentage of Votes to Columns for each County Code 
+## Pivot the Candidate's Percentage of Votes from Rows to Columns for each County Code 
 ```{r eval=TRUE}
 colnames(rsPR) <- c("fips","party","cand","perVotes")
 newdf <- dcast(rsPR,fips ~ cand , value.var = "perVotes")
@@ -120,21 +121,43 @@ mydf <- merge(BinaryCandidateWin,mydf, by = "ID")
   
   county_choropleth(df, title ="Percentage of Votes for Trump")
   
- ## GG Plot
+```
 
+This is a noteworthy plot, and we can provide a good narrative for why certain areas aren't voting for Marco Rubio, as people might possibly expect
+
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
   ggplot(aes(x=RHI725214,y=AGE775214,color=mydf$rwinners),data=mydf)+geom_jitter() + ggtitle("Republicans")+xlab("Percentage of Hispanics") + ylab("Percentage of People Over 65")
+```
+
+Can we apply the same narrative to the Democratic Candidates?
+  
+  
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}  
    ggplot(aes(x=RHI725214,y=AGE775214,color=mydf$demwinners),data=mydf)+geom_jitter() + ggtitle("Democrats") +xlab("Percentage of Hispanics") +ylab("Percentage of People Over 65")
-  
+```
+
+
+##Martin Malley hardly took any votes all.  
+Here I construct a pairwise correlation matrix that shows if there is indeed an obvious correlation between any of the variables.  I was mostly interested in seeing if there were two candidates from the opposite sides of the aisle that either had a strong positive or negative relation.  The only noteworthy observation is that Hillary Clinton and Bernie Sanders are nearly perfectly related. There was a third candidate in their primary but he took such a negligble amount of votes that [% Votes for Bernie] + [% Votes for Hillary] ~ 1
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
   pairs(mydf[,8:21])
-  
-  dropcols <- c("rwinners", "demwinners","area_name","state_abbreviation" )
-cordf <- mydf[ , !names(mydf) %in% dropcols ]
-
-i <- sapply(cordf, is.character)
-cordf[i] <- lapply(cordf[i], as.numeric)
+```  
 
 
-mycors <- cor(cordf, use="complete.obs", method="kendall") 
+Now I thought I would see if I can predict Trump Victories by looking at the different County Facts data.  I used a Recursive Partitioned Decision Tree, and passed in all the variables.   
+
+I split the data into equal sized testing and training data.  I used createDataParition, by passing the variable of interest to the y argument, the random samppling occurs within each class (Trump Wins/ Trump Doesnt Win) and should preserve the overall class distribution.  
+As shown by the confusion matrix results the model overfitted.  We got a much better result on the Training set prediction than the Testing set.
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
+   
+  ##dropcols <- c("rwinners", "demwinners","area_name","state_abbreviation" )
+##cordf <- mydf[ , !names(mydf) %in% dropcols ]
+
+##i <- sapply(cordf, is.character)
+##cordf[i] <- lapply(cordf[i], as.numeric)
+
+
+##mycors <- cor(cordf, use="complete.obs", method="kendall") 
 
 ##myelectioncorplot <- corrplot(mycors,method = "circle")
 
@@ -162,12 +185,29 @@ treeModel <- rpart(treeFormu,  data=mydf.train)
 
 trumpPred.train<- factor(format(round(predict(treeModel, mydf.train))))
 trumpPred.test<- factor(format(round(predict(treeModel, mydf.test))))
-##table(trumpPred, mydf.test$HilWin)
+fancyRpartPlot(treeModel)
 
+```
+
+
+
+The variables of note were 
+
+Variable | Description
+------------- | -------------
+RHI825214 | White (Alone), percent
+RTN131207 | Retail Sales 2007
+AGE135214 | Perons under 5 year, percent
+LFE305213 | Pivoting data from long to wide
+POP645213 | ML Library
+
+
+As shown by the confusion matrix results the model overfitted.  We got a much better result on the Training set (85% accuracy) than the Testing set (72%)
+
+
+
+```{r eval=TRUE, message = FALSE , echo = TRUE, warning = FALSE}
 confusionMatrix(trumpPred.train, mydf.train$TrumpWin)
 confusionMatrix(trumpPred.test, mydf.test$TrumpWin)
-
-
-fancyRpartPlot(treeModel)
   
 ```
