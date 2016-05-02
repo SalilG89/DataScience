@@ -22,7 +22,7 @@ setup_twitter_oauth(api_key, api_secret, access_token = access_token_key, access
 
 
 
-mytweets <- searchTwitter('Prince',   n=500, retryOnRateLimit=1)
+mytweets <- searchTwitter('Jon Snow',   n=500, retryOnRateLimit=1)
 
 
 
@@ -98,49 +98,21 @@ emo.docs = removeWords(emo.docs, stopwords("english"))
 corpus = Corpus(VectorSource(emo.docs))
 tdm = TermDocumentMatrix(corpus)
 tdm = as.matrix(tdm)
-colnames(tdm) = f
+colnames(tdm) = emos
 
 summary(tdm)
 
 # comparison word cloud
 comparison.cloud(tdm, colors = brewer.pal(nemo, "Dark2"), scale = c(3,.5), random.order = FALSE, title.size = 1.5)
 
-png("PrinceComparisonCloud.png", width=12, height=8, units="in", res=300)
+png("EyesWideOpen.png", width=12, height=8, units="in", res=300)
 comparison.cloud(tdm, colors = brewer.pal(nemo, "Dark2"), scale = c(3,.5), random.order = FALSE, title.size = 1.5)
 dev.off()
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typeof(some_txt)
-
-
-mytweets$getText()
-
-
-
-
-text <- paste(some_txt, sep = " ")
-
-
-
-
+#################################################
 
 myVectorSource <- VectorSource(text)
 
